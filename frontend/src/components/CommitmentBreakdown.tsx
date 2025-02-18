@@ -1,24 +1,43 @@
 import React, { useState, useEffect } from "react";
 import { useCommitments } from "../api/hooks";
 import { Commitment } from "../types/commitment";
+import ErrorBoundary from "./ErrorBoundary";
 
 interface CommitmentBreakdownProps {
   investorId: number;
 }
 
-const CommitmentBreakdown: React.FC<CommitmentBreakdownProps> = ({
+// Data validation function
+const validateCommitment = (commitment: any): commitment is Commitment => {
+  return (
+    typeof commitment.id === 'number' &&
+    typeof commitment.asset_class === 'string' &&
+    typeof commitment.amount === 'number' &&
+    typeof commitment.currency === 'string'
+  );
+};
+
+const CommitmentBreakdownContent: React.FC<CommitmentBreakdownProps> = ({
   investorId,
 }) => {
   const [assetClass, setAssetClass] = useState<string | undefined>(undefined);
   const { data: commitments, isLoading, error } = useCommitments(investorId, assetClass);
 
-  // Reset assetClass filter when investorId changes
   useEffect(() => {
     setAssetClass(undefined);
-  }, [investorId]);  
+  }, [investorId]);
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
+
+  // Validate data
+  if (!Array.isArray(commitments)) {
+    throw new Error('Invalid data format: Expected an array of commitments');
+  }
+
+  if (!commitments.every(validateCommitment)) {
+    throw new Error('Invalid commitment data format');
+  }
 
   return (
     <div>
@@ -51,11 +70,11 @@ const CommitmentBreakdown: React.FC<CommitmentBreakdownProps> = ({
           </tr>
         </thead>
         <tbody>
-          {commitments?.map((commitment: Commitment) => (
+          {commitments.map((commitment) => (
             <tr key={commitment.id}>
               <td>{commitment.id}</td>
               <td>{commitment.asset_class}</td>
-              <td>{commitment.amount/1000000}</td>
+              <td>{(commitment.amount/1000000).toFixed(2)}</td>
               <td>{commitment.currency}</td>
             </tr>
           ))}
@@ -64,5 +83,11 @@ const CommitmentBreakdown: React.FC<CommitmentBreakdownProps> = ({
     </div>
   );
 };
+
+const CommitmentBreakdown: React.FC<CommitmentBreakdownProps> = (props) => (
+  <ErrorBoundary>
+    <CommitmentBreakdownContent {...props} />
+  </ErrorBoundary>
+);
 
 export default CommitmentBreakdown;
