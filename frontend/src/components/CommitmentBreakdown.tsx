@@ -1,21 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useCommitments } from "../api/hooks";
-import { Commitment } from "../types/commitment";
 import ErrorBoundary from "./ErrorBoundary";
 
 interface CommitmentBreakdownProps {
   investorId: number;
 }
-
-// Data validation function
-const validateCommitment = (commitment: any): commitment is Commitment => {
-  return (
-    typeof commitment.id === 'number' &&
-    typeof commitment.asset_class === 'string' &&
-    typeof commitment.amount === 'number' &&
-    typeof commitment.currency === 'string'
-  );
-};
 
 const CommitmentBreakdownContent: React.FC<CommitmentBreakdownProps> = ({
   investorId,
@@ -33,10 +22,6 @@ const CommitmentBreakdownContent: React.FC<CommitmentBreakdownProps> = ({
   // Validate data
   if (!Array.isArray(commitments)) {
     throw new Error('Invalid data format: Expected an array of commitments');
-  }
-
-  if (!commitments.every(validateCommitment)) {
-    throw new Error('Invalid commitment data format');
   }
 
   return (
